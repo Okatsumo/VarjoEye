@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using VarjoEye.App.Services;
 using VarjoEye.Core.Contracts;
+using VarjoEye.Core.Models;
 using VarjoEye.Core.Services;
 using VarjoEye.Core.Services.Varjo;
 using VarjoEye.Core.ViewModels;
@@ -27,6 +28,7 @@ public partial class App : Application
         Services = _services;
         MainWindow = _services.GetRequiredService<MainWindow>();
         _services.GetRequiredService<ThemeService>().Apply();
+        _services.GetRequiredService<ILogService>().Add(LogLevel.Information, "VarjoEye started.");
         _services.GetRequiredService<ITrackingDataProvider>().Start();
         MainWindow.Closed += OnMainWindowClosed;
         MainWindow.Activate();
@@ -38,6 +40,11 @@ public partial class App : Application
         {
             tracking.Dispose();
         }
+
+        if (_services?.GetService<ILogService>() is IDisposable logs)
+        {
+            logs.Dispose();
+        }
     }
 
     private static ServiceProvider BuildServices()
@@ -45,7 +52,7 @@ public partial class App : Application
         var services = new ServiceCollection();
         services.AddSingleton<IUiDispatcher>(_ => new WinUiDispatcher(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()));
         services.AddSingleton<IAppSettingsService, InMemoryAppSettingsService>();
-        services.AddSingleton<ILogService, InMemoryLogService>();
+        services.AddSingleton<ILogService, FileLogService>();
         services.AddSingleton<IVarjoRuntime, VarjoRuntime>();
         services.AddSingleton<ITrackingDataProvider, VarjoTrackingDataProvider>();
         services.AddSingleton<ThemeService>();

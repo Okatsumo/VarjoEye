@@ -11,4 +11,12 @@ public interface ILogService
     void Add(LogLevel level, string message);
 
     void Clear();
+
+    string? DirectoryPath { get; }
+
+    string? CurrentFilePath { get; }
+
+    OperationResult OpenDirectory();
+
+    OperationResult OpenCurrentFile();
 }

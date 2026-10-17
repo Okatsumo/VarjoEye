@@ -31,4 +31,13 @@ public sealed class LogsViewModelTests
         Assert.Single(vm.VisibleEntries);
         Assert.Equal(LogLevel.Error, vm.VisibleEntries[0].Level);
     }
+
+    [Fact]
+    public void OpenLatestFile_WithoutPersistence_AddsWarning()
+    {
+        var logs = new InMemoryLogService();
+        var vm = new LogsViewModel(logs, new ImmediateDispatcher());
+        vm.OpenLatestFileCommand.Execute(null);
+        Assert.Contains(logs.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("not persisted"));
+    }
 }

@@ -21,6 +21,14 @@ public sealed class InMemoryLogService : ILogService
 
     public event EventHandler? Changed;
 
+    public string? DirectoryPath => null;
+
+    public string? CurrentFilePath => null;
+
+    public OperationResult OpenDirectory() => OperationResult.Failure("Logs are not persisted.");
+
+    public OperationResult OpenCurrentFile() => OperationResult.Failure("Logs are not persisted.");
+
     public void Add(LogLevel level, string message)
     {
         lock (_gate)

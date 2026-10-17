@@ -29,6 +29,26 @@ public partial class LogsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Clear() => _logs.Clear();
 
+    [RelayCommand]
+    private void OpenFolder()
+    {
+        var result = _logs.OpenDirectory();
+        if (!result.IsSuccess)
+        {
+            _logs.Add(LogLevel.Warning, result.ErrorMessage ?? "Could not open the logs folder.");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenLatestFile()
+    {
+        var result = _logs.OpenCurrentFile();
+        if (!result.IsSuccess)
+        {
+            _logs.Add(LogLevel.Warning, result.ErrorMessage ?? "Could not open the latest log file.");
+        }
+    }
+
     partial void OnSelectedFilterIndexChanged(int value) => Refresh();
 
     private void OnChanged(object? sender, EventArgs e) => _dispatcher.Post(Refresh);

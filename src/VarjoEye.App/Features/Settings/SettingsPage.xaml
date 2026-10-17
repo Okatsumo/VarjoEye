@@ -6,7 +6,7 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel MaxWidth="860" HorizontalAlignment="Left" Padding="18,8,18,24" Spacing="0">
       <TextBlock Text="Settings" Style="{StaticResource SectionTitleTextStyle}" FontSize="24" Margin="0,0,0,4" />
-      <TextBlock Text="Tracking, Baballonia and OSC options for this prototype" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,18" />
+      <TextBlock Text="Tracking, Baballonia and OSC options" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,18" />
 
       <TextBlock Text="General" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
       <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
@@ -97,7 +97,6 @@
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="4" VerticalAlignment="Center">
               <TextBlock Text="Send Tracking to OSC" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
-              <TextBlock Text="UDP output is not opened in this prototype." Style="{StaticResource CaptionTextStyle}" />
             </StackPanel>
             <ToggleSwitch Grid.Column="1" IsOn="{x:Bind ViewModel.SendTrackingToOsc, Mode=TwoWay}" />
           </Grid>
