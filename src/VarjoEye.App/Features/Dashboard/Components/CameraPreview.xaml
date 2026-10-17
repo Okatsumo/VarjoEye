@@ -1,0 +1,25 @@
+<UserControl
+    x:Class="VarjoEye.App.Features.Dashboard.Components.CameraPreview"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid>
+    <Border Style="{StaticResource WellBorderStyle}" CornerRadius="10" Height="210">
+      <Grid>
+        <Image x:Name="PreviewImage" Stretch="UniformToFill" />
+        <Border x:Name="WaitingOverlay" Background="{ThemeResource SubtleFillColorTertiaryBrush}" Visibility="Collapsed">
+          <TextBlock Text="Waiting for camera"
+                     Style="{StaticResource CaptionTextStyle}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+        </Border>
+        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8" Padding="8,4">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse x:Name="AccentDot" Width="8" Height="8" Fill="{x:Bind AccentBrush, Mode=OneWay}" />
+            <TextBlock x:Name="CameraLabel" Style="{StaticResource CaptionTextStyle}" Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

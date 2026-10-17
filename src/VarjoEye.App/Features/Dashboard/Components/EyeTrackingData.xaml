@@ -1,0 +1,150 @@
+<UserControl
+    x:Class="VarjoEye.App.Features.Dashboard.Components.EyeTrackingData"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Border Style="{StaticResource CardBorderStyle}">
+    <StackPanel Spacing="12">
+      <TextBlock Text="Eye Tracking Data" Style="{StaticResource SectionTitleTextStyle}" />
+      <Grid ColumnSpacing="12">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Style="{StaticResource NestedBorderStyle}" Padding="14">
+          <StackPanel Spacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Ellipse Width="8" Height="8" Fill="{ThemeResource VarjoBrush}" />
+              <TextBlock Text="Left Eye" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+            </StackPanel>
+            <Grid>
+              <TextBlock Text="Eye openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.OpennessLabel}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <ProgressBar Value="{Binding LeftMetrics.Openness}" Maximum="1" Height="6" />
+            <Grid>
+              <TextBlock Text="Pupil diameter" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.PupilDiameter}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Iris diameter" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.IrisDiameter}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Pupil / iris ratio" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.PupilIrisRatio}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Legacy pupil size (0–1)" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.LegacyPupilSize}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Calibration quality" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.CalibrationQuality}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Gaze origin (m)" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.GazeOrigin}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Gaze direction" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.GazeDirection}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Border Style="{StaticResource HairlineStyle}" />
+            <Grid>
+              <TextBlock Text="Babble openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.BabbleOpenness}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Babble gaze X" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.BabbleGazeX}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Babble gaze Y" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.BabbleGazeY}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Border Style="{StaticResource HairlineStyle}" />
+            <Grid>
+              <TextBlock Text="Combined openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.CombinedOpenness}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Combined gaze X" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.CombinedGazeX}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Combined gaze Y" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding LeftMetrics.CombinedGazeY}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource NestedBorderStyle}" Padding="14">
+          <StackPanel Spacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Ellipse Width="8" Height="8" Fill="{ThemeResource VarjoBrush}" />
+              <TextBlock Text="Right Eye" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+            </StackPanel>
+            <Grid>
+              <TextBlock Text="Eye openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.OpennessLabel}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <ProgressBar Value="{Binding RightMetrics.Openness}" Maximum="1" Height="6" />
+            <Grid>
+              <TextBlock Text="Pupil diameter" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.PupilDiameter}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Iris diameter" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.IrisDiameter}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Pupil / iris ratio" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.PupilIrisRatio}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Legacy pupil size (0–1)" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.LegacyPupilSize}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Calibration quality" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.CalibrationQuality}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Gaze origin (m)" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.GazeOrigin}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Gaze direction" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.GazeDirection}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Border Style="{StaticResource HairlineStyle}" />
+            <Grid>
+              <TextBlock Text="Babble openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.BabbleOpenness}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Babble gaze X" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.BabbleGazeX}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Babble gaze Y" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.BabbleGazeY}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Border Style="{StaticResource HairlineStyle}" />
+            <Grid>
+              <TextBlock Text="Combined openness" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.CombinedOpenness}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Combined gaze X" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.CombinedGazeX}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+            <Grid>
+              <TextBlock Text="Combined gaze Y" Style="{StaticResource MetricLabelTextStyle}" />
+              <TextBlock Text="{Binding RightMetrics.CombinedGazeY}" Style="{StaticResource MetricValueTextStyle}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>

@@ -1,0 +1,120 @@
+<Page
+    x:Class="VarjoEye.App.Features.Settings.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel MaxWidth="860" HorizontalAlignment="Left" Padding="18,8,18,24" Spacing="0">
+      <TextBlock Text="Settings" Style="{StaticResource SectionTitleTextStyle}" FontSize="24" Margin="0,0,0,4" />
+      <TextBlock Text="Tracking, Baballonia and OSC options for this prototype" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,18" />
+
+      <TextBlock Text="General" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
+      <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+        <StackPanel Spacing="16">
+          <StackPanel Spacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Text="App theme" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="Dark, Light, or match Windows" Style="{StaticResource CaptionTextStyle}" />
+            </StackPanel>
+            <RadioButtons MaxColumns="3"
+                          SelectedIndex="{x:Bind ViewModel.ThemeModeIndex, Mode=TwoWay}">
+              <RadioButton Content="Dark" />
+              <RadioButton Content="Light" />
+              <RadioButton Content="Windows" />
+            </RadioButtons>
+          </StackPanel>
+          <TextBlock Text="Values stay in memory until the app is closed."
+                     Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="Eye Tracking" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
+      <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+        <StackPanel Spacing="16">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="Output Frequency" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="Varjo gaze sampling mode" Style="{StaticResource CaptionTextStyle}" />
+            </StackPanel>
+            <ComboBox Grid.Column="1" Width="200"
+                      ItemsSource="{x:Bind ViewModel.OutputFrequencies}"
+                      SelectedIndex="{x:Bind ViewModel.OutputFrequencyIndex, Mode=TwoWay}" />
+          </Grid>
+          <Border Style="{StaticResource HairlineStyle}" />
+          <StackPanel Spacing="4">
+            <Grid>
+              <TextBlock Text="Gaze Smoothing" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind ViewModel.GazeSmoothingLabel, Mode=OneWay}"
+                         Foreground="{ThemeResource VarjoBrush}" HorizontalAlignment="Right" />
+            </Grid>
+            <Slider Minimum="0" Maximum="100" Value="{x:Bind ViewModel.GazeSmoothing, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <Grid>
+              <TextBlock Text="Blink Sensitivity" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind ViewModel.BlinkSensitivityLabel, Mode=OneWay}"
+                         Foreground="{ThemeResource VarjoBrush}" HorizontalAlignment="Right" />
+            </Grid>
+            <Slider Minimum="0" Maximum="100" Value="{x:Bind ViewModel.BlinkSensitivity, Mode=TwoWay}" />
+          </StackPanel>
+          <Border Style="{StaticResource HairlineStyle}" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="Raw Tracking Mode" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="Pass fused gaze without extra smoothing" Style="{StaticResource CaptionTextStyle}" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsOn="{x:Bind ViewModel.RawTrackingMode, Mode=TwoWay}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="Baballonia" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
+      <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Inference Device" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+          <TextBlock Text="Demonstration list. Real GPU detection is not enabled." Style="{StaticResource CaptionTextStyle}" />
+          <ComboBox ItemsSource="{x:Bind ViewModel.InferenceDevices}"
+                    SelectedIndex="{x:Bind ViewModel.InferenceDeviceIndex, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="OSC" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
+      <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+        <StackPanel Spacing="16">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="Send Tracking to OSC" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="UDP output is not opened in this prototype." Style="{StaticResource CaptionTextStyle}" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsOn="{x:Bind ViewModel.SendTrackingToOsc, Mode=TwoWay}" />
+          </Grid>
+          <TextBox Header="Host" Text="{x:Bind ViewModel.OscHost, Mode=TwoWay}" />
+          <NumberBox Header="Port"
+                     Minimum="1"
+                     Maximum="65535"
+                     SpinButtonPlacementMode="Inline"
+                     Value="{x:Bind ViewModel.OscPortValue, Mode=TwoWay}" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="Advanced" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
+      <Border Style="{StaticResource CardBorderStyle}">
+        <TextBlock Text="Additional diagnostic parameters will appear here in a later stage."
+                   Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

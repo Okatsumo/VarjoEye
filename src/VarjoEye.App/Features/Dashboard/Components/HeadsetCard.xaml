@@ -1,0 +1,64 @@
+<UserControl
+    x:Class="VarjoEye.App.Features.Dashboard.Components.HeadsetCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:VarjoEye.App.Controls"
+    xmlns:converters="using:VarjoEye.App.Converters">
+  <UserControl.Resources>
+    <converters:HeadsetImageConverter x:Key="HeadsetImageConverter" />
+  </UserControl.Resources>
+  <Border Style="{StaticResource CardBorderStyle}">
+    <StackPanel Spacing="14">
+      <TextBlock Text="Headset &amp; Connection" Style="{StaticResource SectionTitleTextStyle}" />
+      <Border Style="{StaticResource NestedBorderStyle}" Padding="14">
+        <Grid ColumnSpacing="14">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="92" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Image Source="{Binding Headset.ImageAssetKey, Converter={StaticResource HeadsetImageConverter}}"
+                 Stretch="Uniform"
+                 VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+            <TextBlock Text="{Binding Headset.Name}"
+                       Style="{StaticResource SectionTitleTextStyle}" FontSize="20" />
+            <controls:StatusIndicator
+                Text="{Binding Headset.ConnectionLabel}"
+                Status="{Binding Headset.Connection}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid ColumnSpacing="16" RowSpacing="10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Spacing="4">
+          <TextBlock Text="Runtime" Style="{StaticResource MetricLabelTextStyle}" />
+          <controls:StatusIndicator Text="{Binding Headset.RuntimeStatus}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="4">
+          <TextBlock Text="Tracking Frequency" Style="{StaticResource MetricLabelTextStyle}" />
+          <TextBlock Text="{Binding Headset.TrackingFrequency}" Style="{StaticResource MetricValueTextStyle}" HorizontalAlignment="Left" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Spacing="4">
+          <TextBlock Text="Eye Tracking" Style="{StaticResource MetricLabelTextStyle}" />
+          <controls:StatusIndicator Text="{Binding Headset.EyeTrackingStatus}" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+          <TextBlock Text="Varjo Runtime" Style="{StaticResource MetricLabelTextStyle}" />
+          <TextBlock Text="{Binding Headset.VarjoRuntimeVersion}" Style="{StaticResource MetricValueTextStyle}" HorizontalAlignment="Left" />
+        </StackPanel>
+        <StackPanel Grid.Row="2" Spacing="4">
+          <TextBlock Text="OSC Output" Style="{StaticResource MetricLabelTextStyle}" />
+          <controls:StatusIndicator Text="{Binding Headset.OscOutputStatus}" />
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>

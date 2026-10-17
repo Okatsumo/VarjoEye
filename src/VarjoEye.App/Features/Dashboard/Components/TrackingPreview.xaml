@@ -1,0 +1,82 @@
+<UserControl
+    x:Class="VarjoEye.App.Features.Dashboard.Components.TrackingPreview"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:VarjoEye.App.Controls">
+  <Border Style="{StaticResource CardBorderStyle}">
+    <Grid RowSpacing="12">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Spacing="2">
+          <TextBlock Text="Tracking Preview" Style="{StaticResource SectionTitleTextStyle}" />
+          <TextBlock Text="Live eye tracking visualization and combined result" Style="{StaticResource CaptionTextStyle}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="8">
+          <TextBlock Text="Preview Layers" Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Right" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <ToggleSwitch MinWidth="0" OffContent="" OnContent=""
+                            IsOn="{Binding ShowVarjoLayer, Mode=TwoWay}" />
+              <TextBlock Text="Varjo API" Foreground="{ThemeResource VarjoBrush}" VerticalAlignment="Center" FontSize="13" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <ToggleSwitch MinWidth="0" OffContent="" OnContent=""
+                            IsOn="{Binding ShowBaballoniaLayer, Mode=TwoWay}" />
+              <TextBlock Text="Baballonia" Foreground="{ThemeResource BaballoniaBrush}" VerticalAlignment="Center" FontSize="13" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <ToggleSwitch MinWidth="0" OffContent="" OnContent=""
+                            IsOn="{Binding ShowCombinedLayer, Mode=TwoWay}" />
+              <TextBlock Text="Combined" Foreground="{ThemeResource CombinedBrush}" VerticalAlignment="Center" FontSize="13" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+      <Border Grid.Row="1" Background="Transparent" MinHeight="250" Padding="8">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="1" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Grid>
+            <TextBlock Text="Left Eye" Style="{StaticResource CaptionTextStyle}" Margin="12,8,0,0" />
+            <controls:EyeVisualizationControl
+                EyeOpenness="{Binding LeftEye.Visual.Openness}"
+                PupilX="{Binding LeftEye.Visual.PupilX}"
+                PupilY="{Binding LeftEye.Visual.PupilY}"
+                PupilSize="{Binding LeftEye.Visual.PupilSize}"
+                VarjoState="{Binding LeftEye.Visual}"
+                BaballoniaState="{Binding LeftEye.BabbleVisual}"
+                CombinedState="{Binding LeftEye.CombinedVisual}"
+                ShowVarjoLayer="{Binding ShowVarjoLayer}"
+                ShowBaballoniaLayer="{Binding ShowBaballoniaLayer}"
+                ShowCombinedLayer="{Binding ShowCombinedLayer}" />
+          </Grid>
+          <Border Grid.Column="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,16" />
+          <Grid Grid.Column="2">
+            <TextBlock Text="Right Eye" Style="{StaticResource CaptionTextStyle}" HorizontalAlignment="Right" Margin="0,8,12,0" />
+            <controls:EyeVisualizationControl
+                EyeOpenness="{Binding RightEye.Visual.Openness}"
+                PupilX="{Binding RightEye.Visual.PupilX}"
+                PupilY="{Binding RightEye.Visual.PupilY}"
+                PupilSize="{Binding RightEye.Visual.PupilSize}"
+                VarjoState="{Binding RightEye.Visual}"
+                BaballoniaState="{Binding RightEye.BabbleVisual}"
+                CombinedState="{Binding RightEye.CombinedVisual}"
+                ShowVarjoLayer="{Binding ShowVarjoLayer}"
+                ShowBaballoniaLayer="{Binding ShowBaballoniaLayer}"
+                ShowCombinedLayer="{Binding ShowCombinedLayer}" />
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

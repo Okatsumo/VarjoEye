@@ -1,0 +1,80 @@
+<Page
+    x:Class="VarjoEye.App.Features.Dashboard.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:components="using:VarjoEye.App.Features.Dashboard.Components"
+    Background="Transparent">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <InfoBar
+        Grid.Row="0"
+        IsOpen="{x:Bind ViewModel.IsStatusOpen, Mode=TwoWay}"
+        Severity="Informational"
+        Title="Varjo"
+        Message="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+        Margin="18,8,18,0" />
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <Grid ColumnSpacing="16" Padding="18,8,18,18" MinWidth="980">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="0.36*" MinWidth="340" />
+          <ColumnDefinition Width="0.64*" MinWidth="560" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Spacing="14">
+          <components:HeadsetCard ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+          <Border Style="{StaticResource CardBorderStyle}">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Varjo IR Camera" Style="{StaticResource SectionTitleTextStyle}" />
+              <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <components:CameraPreview Camera="{x:Bind ViewModel.VarjoLeftCamera, Mode=OneWay}"
+                                          AccentBrush="{ThemeResource VarjoBrush}" />
+                <components:CameraPreview Grid.Column="1"
+                                          Camera="{x:Bind ViewModel.VarjoRightCamera, Mode=OneWay}"
+                                          AccentBrush="{ThemeResource VarjoBrush}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource CardBorderStyle}">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Baballonia Input Preview" Style="{StaticResource SectionTitleTextStyle}" />
+              <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <components:CameraPreview Camera="{x:Bind ViewModel.LeftCamera, Mode=OneWay}"
+                                          AccentBrush="{ThemeResource BaballoniaBrush}" />
+                <components:CameraPreview Grid.Column="1"
+                                          Camera="{x:Bind ViewModel.RightCamera, Mode=OneWay}"
+                                          AccentBrush="{ThemeResource BaballoniaBrush}" />
+              </Grid>
+              <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Content="Recalibrate"
+                        Style="{StaticResource RecalibrateButtonStyle}"
+                        Command="{x:Bind ViewModel.RecalibrateCommand}" />
+                <Button Grid.Column="1"
+                        Content="Train Model"
+                        Style="{StaticResource TrainModelButtonStyle}"
+                        Command="{x:Bind ViewModel.TrainModelCommand}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="14">
+          <components:TrackingPreview ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+          <components:EyeTrackingData ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
+</Page>

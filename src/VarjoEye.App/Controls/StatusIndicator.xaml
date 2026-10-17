@@ -1,0 +1,9 @@
+<UserControl
+    x:Class="VarjoEye.App.Controls.StatusIndicator"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <StackPanel Orientation="Horizontal" Spacing="8">
+    <Ellipse x:Name="Dot" Width="8" Height="8" />
+    <TextBlock x:Name="LabelText" FontSize="13" FontWeight="SemiBold" />
+  </StackPanel>
+</UserControl>

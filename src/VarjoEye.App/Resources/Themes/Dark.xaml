@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Color x:Key="AppCardColor">#99171F2C</Color>
+  <Color x:Key="AppNestedSurfaceColor">#CC1C2635</Color>
+  <Color x:Key="AppStrokeColor">#29374B</Color>
+  <Color x:Key="AppPrimaryTextColor">#F4F7FC</Color>
+  <Color x:Key="AppSecondaryTextColor">#9DB5D2</Color>
+  <Color x:Key="AppVarjoColor">#347EFF</Color>
+  <Color x:Key="AppBaballoniaColor">#A83CFF</Color>
+  <Color x:Key="AppCombinedColor">#18D57B</Color>
+  <Color x:Key="AppWarningColor">#F4B84B</Color>
+  <Color x:Key="AppErrorColor">#F05252</Color>
+  <Color x:Key="AppSuccessColor">#18D57B</Color>
+
+  <SolidColorBrush x:Key="AppCardBrush" Color="{StaticResource AppCardColor}" />
+  <SolidColorBrush x:Key="AppNestedSurfaceBrush" Color="{StaticResource AppNestedSurfaceColor}" />
+  <SolidColorBrush x:Key="AppStrokeBrush" Color="{StaticResource AppStrokeColor}" />
+  <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="{StaticResource AppPrimaryTextColor}" />
+  <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="{StaticResource AppSecondaryTextColor}" />
+  <SolidColorBrush x:Key="VarjoBrush" Color="{StaticResource AppVarjoColor}" />
+  <SolidColorBrush x:Key="BaballoniaBrush" Color="{StaticResource AppBaballoniaColor}" />
+  <SolidColorBrush x:Key="CombinedBrush" Color="{StaticResource AppCombinedColor}" />
+  <SolidColorBrush x:Key="AppWarningBrush" Color="{StaticResource AppWarningColor}" />
+  <SolidColorBrush x:Key="AppErrorBrush" Color="{StaticResource AppErrorColor}" />
+  <SolidColorBrush x:Key="AppSuccessBrush" Color="{StaticResource AppSuccessColor}" />
+  <SolidColorBrush x:Key="AppOverlayBrush" Color="#CC0E141D" />
+</ResourceDictionary>
