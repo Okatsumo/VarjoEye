@@ -12,7 +12,7 @@ public sealed class LogsViewModelTests
     {
         var logs = new InMemoryLogService();
         logs.Add(LogLevel.Information, "started");
-        var vm = new LogsViewModel(logs, new ImmediateDispatcher());
+        var vm = new LogsViewModel(logs, new ImmediateDispatcher(), new VarjoEye.Tests.Fakes.FakeFileLauncher());
         Assert.NotEmpty(vm.VisibleEntries);
         vm.ClearCommand.Execute(null);
         Assert.Empty(vm.VisibleEntries);
@@ -26,7 +26,7 @@ public sealed class LogsViewModelTests
         logs.Clear();
         logs.Add(LogLevel.Debug, "d");
         logs.Add(LogLevel.Error, "e");
-        var vm = new LogsViewModel(logs, new ImmediateDispatcher());
+        var vm = new LogsViewModel(logs, new ImmediateDispatcher(), new VarjoEye.Tests.Fakes.FakeFileLauncher());
         vm.SelectedFilterIndex = Array.IndexOf(vm.LevelFilters.ToArray(), "Error");
         Assert.Single(vm.VisibleEntries);
         Assert.Equal(LogLevel.Error, vm.VisibleEntries[0].Level);
@@ -36,7 +36,7 @@ public sealed class LogsViewModelTests
     public void OpenLatestFile_WithoutPersistence_AddsWarning()
     {
         var logs = new InMemoryLogService();
-        var vm = new LogsViewModel(logs, new ImmediateDispatcher());
+        var vm = new LogsViewModel(logs, new ImmediateDispatcher(), new VarjoEye.Tests.Fakes.FakeFileLauncher());
         vm.OpenLatestFileCommand.Execute(null);
         Assert.Contains(logs.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("not persisted"));
     }

@@ -12,6 +12,9 @@ internal sealed class FakeVarjoRuntime : IVarjoRuntime
     private bool _eyeTrackingInitialized;
     private bool _cameraStreaming;
 
+    public int StatusReadCount { get; private set; }
+    public int GazeReadCount { get; private set; }
+
     public int ConnectCount { get; private set; }
 
     public int DisconnectCount { get; private set; }
@@ -106,6 +109,7 @@ internal sealed class FakeVarjoRuntime : IVarjoRuntime
 
     public VarjoHeadsetInfoResult GetHeadsetStatus()
     {
+        StatusReadCount++;
         using var _ = EnterNative();
         lock (_gate)
         {
@@ -149,6 +153,7 @@ internal sealed class FakeVarjoRuntime : IVarjoRuntime
 
     public VarjoGazeResult GetGazeSample()
     {
+        GazeReadCount++;
         using var _ = EnterNative();
         lock (_gate)
         {
@@ -158,9 +163,22 @@ internal sealed class FakeVarjoRuntime : IVarjoRuntime
             }
 
             var eye = new EyeTrackingEye(1, 4.1, 12, 0.3, 0.5, new Vector3Value(0, 0, 0), new Vector3Value(0, 0, 1));
-            return VarjoGazeResult.Success(new GazeSample(1, eye, eye));
+            return VarjoGazeResult.Success(new GazeSample(1, eye, eye, CurrentTimeNanoseconds));
         }
     }
+
+    public Func<VarjoGazeBatchResult>? BatchFactory { get; set; }
+
+    public VarjoGazeBatchResult GetGazeSamples()
+    {
+        if (BatchFactory is { } factory) return factory();
+        var latest = GetGazeSample();
+        return new(latest.Sample is { } sample ? [sample] : [], latest.ErrorMessage);
+    }
+
+    public long CurrentTimeNanoseconds { get; set; } = 1_000_000_000;
+
+    public long GetCurrentTimeNanoseconds() => CurrentTimeNanoseconds;
 
     public OperationResult RequestGazeCalibration() => OperationResult.Success();
 

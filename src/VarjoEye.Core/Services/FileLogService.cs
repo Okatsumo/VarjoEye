@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using VarjoEye.Core.Contracts;
 using VarjoEye.Core.Models;
@@ -73,10 +72,6 @@ public sealed class FileLogService : ILogService, IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public OperationResult OpenDirectory() => OpenPath(DirectoryPath);
-
-    public OperationResult OpenCurrentFile() => OpenPath(CurrentFilePath);
-
     public void Dispose()
     {
         lock (_gate)
@@ -114,25 +109,4 @@ public sealed class FileLogService : ILogService, IDisposable
     private static string Format(LogEntry entry) =>
         $"{entry.Timestamp.LocalDateTime:yyyy-MM-dd HH:mm:ss.fff} [{entry.Level}] {entry.Message}";
 
-    private static OperationResult OpenPath(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || (!File.Exists(path) && !Directory.Exists(path)))
-        {
-            return OperationResult.Failure("Log path was not found.");
-        }
-
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = path,
-                UseShellExecute = true
-            });
-            return OperationResult.Success();
-        }
-        catch (Exception exception)
-        {
-            return OperationResult.Failure(exception.Message);
-        }
-    }
 }

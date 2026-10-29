@@ -33,9 +33,9 @@ public partial class EyeMetricsDisplay : ObservableObject
         CalibrationQuality = hasData ? eye.Varjo.CalibrationQuality : "—";
         GazeOrigin = hasData ? eye.Varjo.GazeOriginMeters.Display : "—";
         GazeDirection = hasData ? eye.Varjo.GazeDirection.Display : "—";
-        BabbleOpenness = Format(hasData, eye.Babble.Openness);
-        BabbleGazeX = Format(hasData, eye.Babble.GazeX);
-        BabbleGazeY = Format(hasData, eye.Babble.GazeY);
+        BabbleOpenness = Format(eye.Babble.HasSample && eye.Babble.IsOpennessValid, eye.Babble.Openness);
+        BabbleGazeX = Format(eye.Babble.HasSample && eye.Babble.IsGazeValid, eye.Babble.GazeX);
+        BabbleGazeY = Format(eye.Babble.HasSample && eye.Babble.IsGazeValid, eye.Babble.GazeY);
         CombinedOpenness = Format(hasData, eye.Combined.Openness);
         CombinedGazeX = Format(hasData, eye.Combined.GazeX);
         CombinedGazeY = Format(hasData, eye.Combined.GazeY);

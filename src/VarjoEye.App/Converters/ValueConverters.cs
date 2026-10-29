@@ -67,12 +67,7 @@ public sealed class HeadsetImageConverter : IValueConverter
 {
     public object? Convert(object value, Type targetType, object parameter, string language)
     {
-        var key = value as string;
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            key = HeadsetCatalog.Unknown.ImageAssetKey;
-        }
-
+        var key = VarjoEye.App.Services.HeadsetImageCatalog.GetImageKey(value as string);
         return new BitmapImage(new Uri($"ms-appx:///Assets/Images/{key}"));
     }
 

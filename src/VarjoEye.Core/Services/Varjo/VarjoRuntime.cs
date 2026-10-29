@@ -8,6 +8,9 @@ namespace VarjoEye.Core.Services.Varjo;
 public sealed class VarjoRuntime : IVarjoRuntime
 {
     private readonly ILogService _logs;
+    private readonly VarjoNativeMethods.Gaze[] _gazeBuffer = new VarjoNativeMethods.Gaze[256];
+    private readonly VarjoNativeMethods.EyeMeasurements[] _measurementBuffer = new VarjoNativeMethods.EyeMeasurements[256];
+    private bool _batchGazeUnavailable;
     private readonly object _gate = new();
     private VarjoSessionHandle? _session;
     private bool _eyeTrackingInitialized;
@@ -340,16 +343,78 @@ public sealed class VarjoRuntime : IVarjoRuntime
                     return VarjoGazeResult.Success(null);
                 }
 
-                return VarjoGazeResult.Success(new GazeSample(
-                    gaze.FrameNumber,
-                    ConvertEye(gaze.LeftEye, gaze.DeprecatedLeftPupilSize, measurements.LeftOpenness,
-                        measurements.LeftPupilDiameterMm, measurements.LeftIrisDiameterMm, measurements.LeftPupilIrisRatio),
-                    ConvertEye(gaze.RightEye, gaze.DeprecatedRightPupilSize, measurements.RightOpenness,
-                        measurements.RightPupilDiameterMm, measurements.RightIrisDiameterMm, measurements.RightPupilIrisRatio)));
+                return VarjoGazeResult.Success(ConvertGaze(gaze, measurements));
             }
             catch (EntryPointNotFoundException)
             {
                 return VarjoGazeResult.Failure("The installed VarjoLib.dll does not expose gaze data API.");
+            }
+        }
+    }
+
+    public VarjoGazeBatchResult GetGazeSamples()
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_session is null || !_eyeTrackingInitialized)
+                return new([], "Eye tracking is not initialized.");
+            if (_batchGazeUnavailable)
+            {
+                var latest = GetGazeSample();
+                return new(latest.Sample is { } sample ? [sample] : [], latest.ErrorMessage);
+            }
+            try
+            {
+                var count = VarjoNativeMethods.GetGazeDataArray(_session, _gazeBuffer, _measurementBuffer, _gazeBuffer.Length);
+                var error = VarjoNativeMethods.GetError(_session);
+                if (error != 0) return new([], VarjoNativeMethods.DescribeError(error));
+                if (count < 0 || count > _gazeBuffer.Length) return new([], "Invalid gaze batch size from Varjo.");
+                if (count == 0) return new([]);
+                var samples = new GazeSample[count];
+                for (var i = 0; i < count; i++) samples[i] = ConvertGaze(_gazeBuffer[i], _measurementBuffer[i]);
+                return new(samples);
+            }
+            catch (EntryPointNotFoundException)
+            {
+                _batchGazeUnavailable = true;
+                _logs.Add(LogLevel.Warning, "Varjo batch gaze API unavailable; using latest-only gaze polling. Intermediate frames may be lost.");
+                var latest = GetGazeSample();
+                return new(latest.Sample is { } sample ? [sample] : [], latest.ErrorMessage);
+            }
+        }
+    }
+
+    private static GazeSample ConvertGaze(VarjoNativeMethods.Gaze gaze, VarjoNativeMethods.EyeMeasurements measurements) =>
+        new(
+            gaze.FrameNumber,
+            ConvertEye(gaze.LeftEye, gaze.DeprecatedLeftPupilSize, measurements.LeftOpenness,
+                measurements.LeftPupilDiameterMm, measurements.LeftIrisDiameterMm, measurements.LeftPupilIrisRatio),
+            ConvertEye(gaze.RightEye, gaze.DeprecatedRightPupilSize, measurements.RightOpenness,
+                measurements.RightPupilDiameterMm, measurements.RightIrisDiameterMm, measurements.RightPupilIrisRatio),
+            gaze.CaptureTime,
+            (int)gaze.Status,
+            gaze.Stability,
+            (int)gaze.LeftStatus,
+            (int)gaze.RightStatus);
+
+    public long GetCurrentTimeNanoseconds()
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_session is null)
+            {
+                return 0;
+            }
+
+            try
+            {
+                return VarjoNativeMethods.GetCurrentTime(_session);
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return 0;
             }
         }
     }
@@ -565,6 +630,7 @@ public sealed class VarjoRuntime : IVarjoRuntime
                 return;
             }
 
+            var captureTime = Marshal.ReadInt64(frame, VarjoNativeMethods.StreamFrameEyeCameraTimestampOffset);
             for (var channel = 0; channel < 2; channel++)
             {
                 if ((channels & (1UL << channel)) == 0)
@@ -578,6 +644,7 @@ public sealed class VarjoRuntime : IVarjoRuntime
                     continue;
                 }
 
+                EyeCameraFrame? managedFrame = null;
                 VarjoNativeMethods.LockDataStreamBuffer(session, bufferId);
                 try
                 {
@@ -597,24 +664,16 @@ public sealed class VarjoRuntime : IVarjoRuntime
                         continue;
                     }
 
-                    var pixels = new byte[checked(metadata.Width * metadata.Height)];
-                    for (var row = 0; row < metadata.Height; row++)
-                    {
-                        Marshal.Copy(
-                            IntPtr.Add(source, row * metadata.RowStride),
-                            pixels,
-                            row * metadata.Width,
-                            metadata.Width);
-                    }
-
-                    EyeCameraFrameReceived?.Invoke(
-                        this,
-                        new EyeCameraFrame(channel == 0, metadata.Width, metadata.Height, pixels, frameNumber));
+                    var pixels = CopyCameraPixels(source, metadata.Width, metadata.Height, metadata.RowStride);
+                    managedFrame = new EyeCameraFrame(channel == 0, metadata.Width, metadata.Height,
+                        pixels, frameNumber, captureTime);
                 }
                 finally
                 {
                     VarjoNativeMethods.UnlockDataStreamBuffer(session, bufferId);
                 }
+                // Only managed memory escapes the lock; subscribers cannot retain an SDK buffer.
+                if (managedFrame is not null) EyeCameraFrameReceived?.Invoke(this, managedFrame);
             }
         }
         catch (Exception)
@@ -624,6 +683,21 @@ public sealed class VarjoRuntime : IVarjoRuntime
                 _logs.Add(LogLevel.Error, "Eye camera frame processing failed.");
             }
         }
+    }
+
+    internal static byte[] CopyCameraPixels(IntPtr source, int width, int height, int rowStride)
+    {
+        var pixels = new byte[checked(width * height)];
+        if (rowStride == width)
+        {
+            Marshal.Copy(source, pixels, 0, pixels.Length);
+        }
+        else
+        {
+            for (var row = 0; row < height; row++)
+                Marshal.Copy(IntPtr.Add(source, row * rowStride), pixels, row * width, width);
+        }
+        return pixels;
     }
 
     private static EyeTrackingEye ConvertEye(

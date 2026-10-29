@@ -24,9 +24,16 @@ public sealed record VarjoEyeMetrics(
         0, 0, 0, 0, 0, "—", Vector3Value.Zero, Vector3Value.Zero);
 }
 
-public sealed record BabbleEyeMetrics(double Openness, double GazeX, double GazeY)
+public sealed record BabbleEyeMetrics(
+    bool HasSample,
+    bool IsOpennessValid,
+    bool IsGazeValid,
+    double Openness,
+    double GazeX,
+    double GazeY,
+    bool IsStale = false)
 {
-    public static BabbleEyeMetrics Empty { get; } = new(0, 0, 0);
+    public static BabbleEyeMetrics Empty { get; } = new(false, false, false, 0, 0, 0);
 }
 
 public sealed record CombinedEyeMetrics(double Openness, double GazeX, double GazeY)
@@ -38,7 +45,10 @@ public sealed record EyeSourceVisual(
     double Openness,
     double PupilX,
     double PupilY,
-    double PupilSize)
+    double PupilSize,
+    bool HasData = true)
 {
     public static EyeSourceVisual Neutral { get; } = new(1, 0, 0, 0.55);
+
+    public static EyeSourceVisual Hidden { get; } = new(0, 0, 0, 0.55, false);
 }

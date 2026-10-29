@@ -16,7 +16,4 @@ public interface ILogService
 
     string? CurrentFilePath { get; }
 
-    OperationResult OpenDirectory();
-
-    OperationResult OpenCurrentFile();
 }

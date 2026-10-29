@@ -17,4 +17,13 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\VarjoEye.Core\VarjoEye.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\Baballonia.eyeModel.onnx" Link="Models\Baballonia.eyeModel.onnx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\VarjoEye.App\Services\TargetPosition.cs" Link="AppHelpers\TargetPosition.cs" />
+    <Compile Include="..\..\src\VarjoEye.App\Services\HeadsetImageCatalog.cs" Link="AppHelpers\HeadsetImageCatalog.cs" />
+    <Compile Include="..\..\src\VarjoEye.App\Services\WindowsShellService.cs" Link="AppHelpers\WindowsShellService.cs" />
+    <Compile Include="..\..\src\VarjoEye.App\Services\BaballoniaModelPaths.cs" Link="AppHelpers\BaballoniaModelPaths.cs" />
+  </ItemGroup>
 </Project>

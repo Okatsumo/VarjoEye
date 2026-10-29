@@ -214,7 +214,7 @@ public sealed class EyeVisualizationControl : UserControl
 
         var babble = BaballoniaState ?? EyeSourceVisual.Neutral;
         var babbleCenter = GazePoint(cx, cy, halfWidth, babble.PupilX, babble.PupilY);
-        SetLayer(_babbleRing, _babbleDot, ShowBaballoniaLayer, babbleCenter, 22, 2.4);
+        SetLayer(_babbleRing, _babbleDot, ShowBaballoniaLayer && babble.HasData, babbleCenter, 22, 2.4);
 
         var combined = CombinedState ?? EyeSourceVisual.Neutral;
         var combinedCenter = GazePoint(cx, cy, halfWidth, combined.PupilX, combined.PupilY);

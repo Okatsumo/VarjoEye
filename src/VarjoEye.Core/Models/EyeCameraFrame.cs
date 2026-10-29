@@ -5,4 +5,5 @@ public sealed record EyeCameraFrame(
     int Width,
     int Height,
     byte[] Pixels,
-    long FrameNumber);
+    long FrameNumber,
+    long CaptureTimeNanoseconds = 0);

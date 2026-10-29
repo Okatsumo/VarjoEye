@@ -9,11 +9,13 @@ namespace VarjoEye.Core.ViewModels;
 public partial class LogsViewModel : ObservableObject, IDisposable
 {
     private readonly ILogService _logs;
+    private readonly IFileLauncher _launcher;
     private readonly IUiDispatcher _dispatcher;
 
-    public LogsViewModel(ILogService logs, IUiDispatcher dispatcher)
+    public LogsViewModel(ILogService logs, IUiDispatcher dispatcher, IFileLauncher launcher)
     {
         _logs = logs;
+        _launcher = launcher;
         _dispatcher = dispatcher;
         Refresh();
         _logs.Changed += OnChanged;
@@ -32,7 +34,7 @@ public partial class LogsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenFolder()
     {
-        var result = _logs.OpenDirectory();
+        var result = OpenPath(_logs.DirectoryPath);
         if (!result.IsSuccess)
         {
             _logs.Add(LogLevel.Warning, result.ErrorMessage ?? "Could not open the logs folder.");
@@ -42,12 +44,16 @@ public partial class LogsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenLatestFile()
     {
-        var result = _logs.OpenCurrentFile();
+        var result = OpenPath(_logs.CurrentFilePath);
         if (!result.IsSuccess)
         {
             _logs.Add(LogLevel.Warning, result.ErrorMessage ?? "Could not open the latest log file.");
         }
     }
+
+    private OperationResult OpenPath(string? path) => path is null
+        ? OperationResult.Failure("Logs are not persisted.")
+        : _launcher.Open(path);
 
     partial void OnSelectedFilterIndexChanged(int value) => Refresh();
 

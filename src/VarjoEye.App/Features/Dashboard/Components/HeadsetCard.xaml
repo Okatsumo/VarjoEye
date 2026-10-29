@@ -16,7 +16,7 @@
             <ColumnDefinition Width="92" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <Image Source="{Binding Headset.ImageAssetKey, Converter={StaticResource HeadsetImageConverter}}"
+          <Image Source="{Binding Headset.ModelId, Converter={StaticResource HeadsetImageConverter}}"
                  Stretch="Uniform"
                  VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">

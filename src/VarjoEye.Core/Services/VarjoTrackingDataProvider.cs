@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Threading.Channels;
 using VarjoEye.Core.Contracts;
 using VarjoEye.Core.Models;
 using VarjoEye.Core.Services.Varjo;
@@ -6,6 +8,7 @@ namespace VarjoEye.Core.Services;
 
 public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
 {
+    private static readonly TimeSpan HeadsetStatusInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan DataTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan UiSampleInterval = TimeSpan.FromMilliseconds(33);
     private static readonly TimeSpan DefaultConnectRetryDelay = TimeSpan.FromSeconds(2);
@@ -17,6 +20,13 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
     private readonly TimeSpan _connectRetryDelay;
     private readonly TimeSpan _stopTimeout;
     private readonly object _gate = new();
+    private readonly Channel<EyeTrackingState> _stateUpdates = Channel.CreateBounded<EyeTrackingState>(new BoundedChannelOptions(1)
+    {
+        SingleReader = true, SingleWriter = false,
+        AllowSynchronousContinuations = true,
+        FullMode = BoundedChannelFullMode.DropOldest
+    });
+    private readonly Task _stateDelivery;
     private CancellationTokenSource? _run;
     private Task? _loop;
     private EyeTrackingState _current = EyeTrackingState.Empty;
@@ -44,6 +54,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
         _stopTimeout = stopTimeout ?? DefaultStopTimeout;
         _settings.Changed += OnSettingsChanged;
         _varjo.EyeCameraFrameReceived += OnEyeCameraFrame;
+        _stateDelivery = Task.Factory.StartNew(DispatchStates, CancellationToken.None,
+            TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 
     public EyeTrackingState Current
@@ -60,6 +72,10 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
     public event EventHandler<EyeTrackingState>? Updated;
 
     public event EventHandler<EyeCameraFrame>? CameraFrameReceived;
+
+    public event EventHandler<GazeSample>? GazeReceived;
+
+    public long GetCurrentTimeNanoseconds() => _varjo.GetCurrentTimeNanoseconds();
 
     public void Start()
     {
@@ -137,6 +153,9 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
         _settings.Changed -= OnSettingsChanged;
         _varjo.EyeCameraFrameReceived -= OnEyeCameraFrame;
         Stop();
+        _stateUpdates.Writer.TryComplete();
+        if (Task.CurrentId != _stateDelivery.Id && !_stateDelivery.Wait(_stopTimeout))
+            _logs.Add(LogLevel.Warning, "Tracking state delivery did not stop within the allotted time.");
         _varjo.Dispose();
     }
 
@@ -190,7 +209,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
                     continue;
                 }
 
-                await RunSessionAsync(token).ConfigureAwait(false);
+                await Task.Factory.StartNew(() => RunSession(token), token,
+                    TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(false);
                 if (token.IsCancellationRequested)
                 {
                     break;
@@ -225,96 +245,141 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
         }
     }
 
-    private async Task RunSessionAsync(CancellationToken token)
+    private void RunSession(CancellationToken token)
     {
-        using var timerResolution = WindowsTimerResolution.Request();
-        if (OperatingSystem.IsWindows() && !timerResolution.IsActive)
+        // Keep subscriber work off the native poll. Bound memory if a consumer falls behind.
+        var delivery = Channel.CreateBounded<GazeSample>(new BoundedChannelOptions(256)
         {
-            _logs.Add(LogLevel.Warning, "Windows did not grant 1 ms timer resolution; gaze polling may run below the requested rate.");
-        }
-
-        GazeSample? lastGaze = null;
-        long? lastFrame = null;
-        var lastGazeAt = DateTimeOffset.UtcNow;
-        var lastUiPublish = DateTimeOffset.MinValue;
-        var trackingReady = false;
-        var cameraReady = false;
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(5));
-        while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
+            SingleReader = true, SingleWriter = true,
+            // Wake the blocking worker directly; callbacks only execute on that worker.
+            AllowSynchronousContinuations = true,
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+        using var deliveryCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var deliveryTask = Task.Factory.StartNew(() =>
         {
-            var status = _varjo.GetHeadsetStatus();
-            if (!status.IsSuccess || status.Status is null)
+            try
             {
-                var message = status.ErrorMessage ?? "Headset status unavailable.";
-                Publish(Error(message), force: message != _lastError);
-                _lastError = message;
-                trackingReady = false;
-                lastGaze = null;
-                lastFrame = null;
-                StopCameraStream(ref cameraReady);
-                continue;
-            }
-
-            _lastError = null;
-            var headset = status.Status;
-            if (!headset.IsConnected)
-            {
-                trackingReady = false;
-                lastGaze = null;
-                lastFrame = null;
-                StopCameraStream(ref cameraReady);
-                Publish(Disconnected("Waiting for headset", ConnectionStatus.Disconnected, headset.ProductName));
-                MaybeNotifyUi(ref lastUiPublish);
-                continue;
-            }
-
-            var (frequency, filter) = ReadTrackingMode();
-            EnsureCameraStream(frequency, ref cameraReady);
-            if (!trackingReady)
-            {
-                var init = _varjo.InitializeEyeTracking(frequency, filter);
-                if (!init.IsSuccess)
+                while (delivery.Reader.WaitToReadAsync(deliveryCancellation.Token).AsTask().GetAwaiter().GetResult())
                 {
-                    var message = init.ErrorMessage ?? "Eye tracking initialization failed.";
+                    deliveryCancellation.Token.ThrowIfCancellationRequested();
+                    if (!delivery.Reader.TryRead(out var sample)) continue;
+                    try { GazeReceived?.Invoke(this, sample); }
+                    catch (Exception exception)
+                    {
+                        _logs.Add(LogLevel.Error, $"Gaze subscriber failed: {exception.Message}");
+                    }
+                }
+            }
+            catch (OperationCanceledException) when (deliveryCancellation.IsCancellationRequested) { }
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        try
+        {
+            GazeSample? lastGaze = null;
+            long? lastFrame = null;
+            var lastGazeAt = DateTimeOffset.UtcNow;
+            var lastUiPublish = DateTimeOffset.MinValue;
+            var trackingReady = false;
+            var cameraReady = false;
+            VarjoHeadsetInfoResult? cachedStatus = null;
+            var lastStatusRead = 0L;
+            using var timer = new HighResolutionPollTimer(TimeSpan.FromMilliseconds(1), token);
+            _logs.Add(LogLevel.Information, "Varjo gaze polling: high-resolution 1 ms, buffered SDK reads.");
+            while (timer.WaitForNextTick())
+            {
+                var statusNow = Stopwatch.GetTimestamp();
+                var statusUpdated = false;
+                if (cachedStatus is null || Stopwatch.GetElapsedTime(lastStatusRead, statusNow) >= HeadsetStatusInterval)
+                {
+                    cachedStatus = _varjo.GetHeadsetStatus();
+                    statusUpdated = true;
+                    lastStatusRead = Stopwatch.GetTimestamp();
+                }
+                var status = cachedStatus;
+                if (!status.IsSuccess || status.Status is null)
+                {
+                    var message = status.ErrorMessage ?? "Headset status unavailable.";
+                    Publish(Error(message), force: message != _lastError);
+                    _lastError = message;
+                    trackingReady = false;
+                    lastGaze = null;
+                    lastFrame = null;
+                    StopCameraStream(ref cameraReady);
+                    continue;
+                }
+
+                _lastError = null;
+                var headset = status.Status;
+                if (!headset.IsConnected)
+                {
+                    trackingReady = false;
+                    lastGaze = null;
+                    lastFrame = null;
+                    StopCameraStream(ref cameraReady);
+                    Publish(Disconnected("Waiting for headset", ConnectionStatus.Disconnected, headset.ProductName));
+                    MaybeNotifyUi(ref lastUiPublish);
+                    continue;
+                }
+
+                var (frequency, filter) = ReadTrackingMode();
+                EnsureCameraStream(frequency, ref cameraReady);
+                if (!trackingReady)
+                {
+                    var init = _varjo.InitializeEyeTracking(frequency, filter);
+                    if (!init.IsSuccess)
+                    {
+                        var message = init.ErrorMessage ?? "Eye tracking initialization failed.";
+                        Publish(BuildHeadsetOnly(headset, ConnectionStatus.Error, "Error", message, hasData: false));
+                        MaybeNotifyUi(ref lastUiPublish);
+                        continue;
+                    }
+
+                    trackingReady = true;
+                }
+
+                var gaze = _varjo.GetGazeSamples();
+                if (!gaze.IsSuccess)
+                {
+                    var message = gaze.ErrorMessage ?? "Eye tracking data unavailable.";
                     Publish(BuildHeadsetOnly(headset, ConnectionStatus.Error, "Error", message, hasData: false));
                     MaybeNotifyUi(ref lastUiPublish);
                     continue;
                 }
 
-                trackingReady = true;
-            }
+                var receivedNewGaze = false;
+                foreach (var sample in gaze.Samples)
+                {
+                    if (sample.FrameNumber == lastFrame) continue;
+                    receivedNewGaze = true;
+                    lastFrame = sample.FrameNumber;
+                    lastGaze = sample;
+                    lastGazeAt = DateTimeOffset.UtcNow;
+                    delivery.Writer.TryWrite(sample);
+                }
+                if (DateTimeOffset.UtcNow - lastGazeAt > DataTimeout)
+                {
+                    lastGaze = null;
+                    Publish(BuildHeadsetOnly(headset, ConnectionStatus.Connected, "Waiting", null, hasData: false));
+                }
+                else if (lastGaze is not null)
+                {
+                    // Faster SDK polling must not rebuild presentation snapshots on empty reads.
+                    if (receivedNewGaze || statusUpdated)
+                        Publish(BuildLive(headset, lastGaze), force: false);
+                }
+                else
+                {
+                    Publish(BuildHeadsetOnly(headset, ConnectionStatus.Connected, "Waiting", null, hasData: false));
+                }
 
-            var gaze = _varjo.GetGazeSample();
-            if (!gaze.IsSuccess)
-            {
-                var message = gaze.ErrorMessage ?? "Eye tracking data unavailable.";
-                Publish(BuildHeadsetOnly(headset, ConnectionStatus.Error, "Error", message, hasData: false));
                 MaybeNotifyUi(ref lastUiPublish);
-                continue;
             }
-
-            if (gaze.Sample is { } sample && sample.FrameNumber != lastFrame)
-            {
-                lastFrame = sample.FrameNumber;
-                lastGaze = sample;
-                lastGazeAt = DateTimeOffset.UtcNow;
-                Publish(BuildLive(headset, sample), force: false);
-            }
-            else if (DateTimeOffset.UtcNow - lastGazeAt > DataTimeout)
-            {
-                lastGaze = null;
-                Publish(BuildHeadsetOnly(headset, ConnectionStatus.Connected, "Waiting", null, hasData: false));
-            }
-            else if (lastGaze is not null)
-            {
-                Publish(BuildLive(headset, lastGaze), force: false);
-            }
-            else
-            {
-                Publish(BuildHeadsetOnly(headset, ConnectionStatus.Connected, "Waiting", null, hasData: false));
-            }
-
-            MaybeNotifyUi(ref lastUiPublish);
+        }
+        finally
+        {
+            delivery.Writer.TryComplete();
+            deliveryCancellation.Cancel();
+            deliveryTask.GetAwaiter().GetResult();
         }
     }
 
@@ -396,7 +461,6 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
 
     private void NotifyUi()
     {
-        EyeTrackingState state;
         lock (_gate)
         {
             if (!_dirty)
@@ -405,10 +469,27 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
             }
 
             _dirty = false;
-            state = _current;
+            // Enqueue under the publication lock so concurrent stop/poll notifications stay ordered.
+            _stateUpdates.Writer.TryWrite(_current);
         }
+    }
 
-        Updated?.Invoke(this, state);
+    private void DispatchStates()
+    {
+        while (_stateUpdates.Reader.WaitToReadAsync().AsTask().GetAwaiter().GetResult())
+        {
+            if (!_stateUpdates.Reader.TryRead(out var state)) continue;
+            var handlers = Updated;
+            if (handlers is null) continue;
+            foreach (EventHandler<EyeTrackingState> handler in handlers.GetInvocationList())
+            {
+                try { handler(this, state); }
+                catch (Exception exception)
+                {
+                    _logs.Add(LogLevel.Error, $"Tracking state subscriber failed: {exception.Message}");
+                }
+            }
+        }
     }
 
     private static EyeTrackingState Error(string message) =>
@@ -419,8 +500,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
                 ErrorMessage = message,
                 RuntimeStatus = "Error"
             },
-            CameraState.Waiting("Left Eye Camera"),
-            CameraState.Waiting("Right Eye Camera"),
+            CameraFrameState.Waiting(EyeSide.Left),
+            CameraFrameState.Waiting(EyeSide.Right),
             EyeSourceState.Empty,
             EyeSourceState.Empty,
             false);
@@ -433,8 +514,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
         var name = connection == ConnectionStatus.Connected ? model.DisplayName : "No headset";
         return new EyeTrackingState(
             HeadsetState.For(model, connection) with { Name = name, RuntimeStatus = runtime },
-            CameraState.Waiting("Left Eye Camera"),
-            CameraState.Waiting("Right Eye Camera"),
+            CameraFrameState.Waiting(EyeSide.Left),
+            CameraFrameState.Waiting(EyeSide.Right),
             EyeSourceState.Empty,
             EyeSourceState.Empty,
             false);
@@ -450,8 +531,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
         var model = HeadsetCatalog.Resolve(info.ProductName);
         return new EyeTrackingState(
             HeadsetState.FromVarjo(info, model, connection, eyeTrackingStatus, error),
-            CameraState.Waiting("Left Eye Camera"),
-            CameraState.Waiting("Right Eye Camera"),
+            CameraFrameState.Waiting(EyeSide.Left),
+            CameraFrameState.Waiting(EyeSide.Right),
             EyeSourceState.Empty,
             EyeSourceState.Empty,
             hasData);
@@ -467,8 +548,8 @@ public sealed class VarjoTrackingDataProvider : ITrackingDataProvider
             : info.IsGazeCalibrated == true ? "Ready" : "Waiting";
         return new EyeTrackingState(
             HeadsetState.FromVarjo(info, model, ConnectionStatus.Connected, eyeStatus, null),
-            CameraState.Waiting("Left Eye Camera"),
-            CameraState.Waiting("Right Eye Camera"),
+            CameraFrameState.Waiting(EyeSide.Left),
+            CameraFrameState.Waiting(EyeSide.Right),
             left,
             right,
             true);

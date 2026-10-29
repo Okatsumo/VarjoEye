@@ -12,7 +12,19 @@ public sealed record EyeSourceState(
         BabbleEyeMetrics.Empty,
         CombinedEyeMetrics.Empty);
 
-    public EyeSourceVisual BabbleVisual => new(Babble.Openness, Babble.GazeX, Babble.GazeY, Visual.PupilSize);
+    public const double GazeVisualScale = 4;
+
+    public EyeSourceVisual BabbleVisual => Babble.HasSample
+        ? new(
+            Babble.IsOpennessValid ? Babble.Openness : Visual.Openness,
+            ToVisualPupilX(Babble.GazeX),
+            ToVisualPupilY(Babble.GazeY),
+            Visual.PupilSize)
+        : EyeSourceVisual.Hidden;
+
+    public static double ToVisualPupilX(double gazeX) => Math.Clamp(gazeX * GazeVisualScale, -1, 1);
+
+    public static double ToVisualPupilY(double gazeY) => Math.Clamp(-gazeY * GazeVisualScale, -1, 1);
 
     public EyeSourceVisual CombinedVisual => new(Combined.Openness, Combined.GazeX, Combined.GazeY, Visual.PupilSize);
 }

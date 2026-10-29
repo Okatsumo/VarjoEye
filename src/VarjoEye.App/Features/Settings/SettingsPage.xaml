@@ -47,14 +47,6 @@
           <Border Style="{StaticResource HairlineStyle}" />
           <StackPanel Spacing="4">
             <Grid>
-              <TextBlock Text="Gaze Smoothing" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
-              <TextBlock Text="{x:Bind ViewModel.GazeSmoothingLabel, Mode=OneWay}"
-                         Foreground="{ThemeResource VarjoBrush}" HorizontalAlignment="Right" />
-            </Grid>
-            <Slider Minimum="0" Maximum="100" Value="{x:Bind ViewModel.GazeSmoothing, Mode=TwoWay}" />
-          </StackPanel>
-          <StackPanel Spacing="4">
-            <Grid>
               <TextBlock Text="Blink Sensitivity" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
               <TextBlock Text="{x:Bind ViewModel.BlinkSensitivityLabel, Mode=OneWay}"
                          Foreground="{ThemeResource VarjoBrush}" HorizontalAlignment="Right" />
@@ -69,7 +61,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="4" VerticalAlignment="Center">
               <TextBlock Text="Raw Tracking Mode" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
-              <TextBlock Text="Pass fused gaze without extra smoothing" Style="{StaticResource CaptionTextStyle}" />
+              <TextBlock Text="Use raw Varjo gaze instead of the standard Varjo filter" Style="{StaticResource CaptionTextStyle}" />
             </StackPanel>
             <ToggleSwitch Grid.Column="1" IsOn="{x:Bind ViewModel.RawTrackingMode, Mode=TwoWay}" />
           </Grid>
@@ -80,10 +72,28 @@
       <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
         <StackPanel Spacing="8">
           <TextBlock Text="Inference Device" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
-          <TextBlock Text="Demonstration list. Real GPU detection is not enabled." Style="{StaticResource CaptionTextStyle}" />
+          <TextBlock Text="DirectML adapters from DXGI. GPU failure falls back to CPU and is logged." Style="{StaticResource CaptionTextStyle}" />
           <ComboBox ItemsSource="{x:Bind ViewModel.InferenceDevices}"
                     SelectedIndex="{x:Bind ViewModel.InferenceDeviceIndex, Mode=TwoWay}"
                     HorizontalAlignment="Stretch" />
+          <Border Style="{StaticResource HairlineStyle}" Margin="0,8" />
+          <ToggleSwitch Header="Smooth Baballonia tracking"
+                        IsOn="{x:Bind ViewModel.BaballoniaSmoothingEnabled, Mode=TwoWay}" />
+          <TextBlock Text="Smooths gaze and eyelid movement to reduce jitter. Turn off for the fastest response; tracking may look noisier. Changes apply immediately."
+                     Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+          <StackPanel Spacing="4">
+            <Grid>
+              <TextBlock Text="Smoothing strength" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind ViewModel.GazeSmoothingLabel, Mode=OneWay}"
+                         Foreground="{ThemeResource BaballoniaBrush}" HorizontalAlignment="Right" />
+            </Grid>
+            <Slider Minimum="0" Maximum="100" StepFrequency="1"
+                    IsEnabled="{x:Bind ViewModel.BaballoniaSmoothingEnabled, Mode=OneWay}"
+                    AutomationProperties.Name="Baballonia smoothing strength"
+                    Value="{x:Bind ViewModel.GazeSmoothing, Mode=TwoWay}" />
+            <TextBlock Text="Lower values respond faster. Higher values reduce jitter but add delay. 0% keeps light smoothing; use the switch above to disable it completely. 35% matches the previous filter."
+                       Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+          </StackPanel>
         </StackPanel>
       </Border>
 
@@ -111,8 +121,12 @@
 
       <TextBlock Text="Advanced" Style="{StaticResource SectionTitleTextStyle}" FontSize="16" Margin="0,0,0,8" />
       <Border Style="{StaticResource CardBorderStyle}">
-        <TextBlock Text="Additional diagnostic parameters will appear here in a later stage."
-                   Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+        <StackPanel Spacing="8">
+          <ToggleSwitch Header="Measure tracking latency and FPS"
+                        IsOn="{x:Bind ViewModel.TrackingDiagnosticsEnabled, Mode=TwoWay}" />
+          <TextBlock Text="Measure Varjo API, Baballonia and camera latency and FPS, and write averages to the log every 5 seconds. Changes apply immediately without restarting tracking."
+                     Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+        </StackPanel>
       </Border>
     </StackPanel>
   </ScrollViewer>

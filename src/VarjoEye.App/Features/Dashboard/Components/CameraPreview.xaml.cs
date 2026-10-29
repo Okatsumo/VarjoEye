@@ -21,6 +21,7 @@ public sealed partial class CameraPreview : UserControl
     private WriteableBitmap? _bitmap;
     private int _bitmapWidth;
     private int _bitmapHeight;
+    private byte[]? _lastPixels;
 
     public CameraPreview()
     {
@@ -42,7 +43,7 @@ public sealed partial class CameraPreview : UserControl
 
     private static void OnCameraChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is CameraPreview preview)
+        if (d is CameraPreview preview && !ReferenceEquals(e.OldValue, e.NewValue))
         {
             preview.Apply();
         }
@@ -64,11 +65,8 @@ public sealed partial class CameraPreview : UserControl
             return;
         }
 
-        var available = camera is { IsAvailable: true, ImageAssetKey: not null };
-        WaitingOverlay.Visibility = available ? Visibility.Collapsed : Visibility.Visible;
-        PreviewImage.Source = available
-            ? new BitmapImage(new Uri($"ms-appx:///Assets/Images/{camera!.ImageAssetKey}"))
-            : null;
+        WaitingOverlay.Visibility = Visibility.Visible;
+        PreviewImage.Source = null;
         _bitmap = null;
     }
 
@@ -79,9 +77,15 @@ public sealed partial class CameraPreview : UserControl
             _bitmap = new WriteableBitmap(camera.Width, camera.Height);
             _bitmapWidth = camera.Width;
             _bitmapHeight = camera.Height;
+            _lastPixels = null;
         }
 
         var pixels = camera.Pixels!;
+        if (ReferenceEquals(pixels, _lastPixels))
+        {
+            return _bitmap;
+        }
+
         using (var buffer = _bitmap.PixelBuffer.AsStream())
         {
             var row = new byte[checked(camera.Width * 4)];
@@ -103,6 +107,7 @@ public sealed partial class CameraPreview : UserControl
             }
         }
 
+        _lastPixels = pixels;
         _bitmap.Invalidate();
         return _bitmap;
     }

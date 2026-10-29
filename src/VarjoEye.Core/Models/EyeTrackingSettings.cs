@@ -16,7 +16,12 @@ public enum EyeTrackingFilter
 public sealed record GazeSample(
     long FrameNumber,
     EyeTrackingEye Left,
-    EyeTrackingEye Right);
+    EyeTrackingEye Right,
+    long CaptureTimeNanoseconds = 0,
+    int Status = 2,
+    double Stability = 1,
+    int LeftStatus = 3,
+    int RightStatus = 3);
 
 public sealed record EyeTrackingEye(
     double Openness,
@@ -54,4 +59,9 @@ public sealed record VarjoGazeResult(GazeSample? Sample, string? ErrorMessage = 
     public static VarjoGazeResult Success(GazeSample? sample) => new(sample);
 
     public static VarjoGazeResult Failure(string message) => new(null, message);
+}
+
+public sealed record VarjoGazeBatchResult(IReadOnlyList<GazeSample> Samples, string? ErrorMessage = null)
+{
+    public bool IsSuccess => ErrorMessage is null;
 }

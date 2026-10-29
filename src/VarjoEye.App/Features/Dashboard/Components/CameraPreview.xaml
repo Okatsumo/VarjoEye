@@ -5,7 +5,7 @@
   <Grid>
     <Border Style="{StaticResource WellBorderStyle}" CornerRadius="10" Height="210">
       <Grid>
-        <Image x:Name="PreviewImage" Stretch="UniformToFill" />
+        <Image x:Name="PreviewImage" Stretch="Uniform" />
         <Border x:Name="WaitingOverlay" Background="{ThemeResource SubtleFillColorTertiaryBrush}" Visibility="Collapsed">
           <TextBlock Text="Waiting for camera"
                      Style="{StaticResource CaptionTextStyle}"

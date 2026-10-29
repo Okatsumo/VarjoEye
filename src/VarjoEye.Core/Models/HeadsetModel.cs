@@ -1,20 +1,20 @@
 namespace VarjoEye.Core.Models;
 
-public sealed record HeadsetModel(string Id, string DisplayName, string ImageAssetKey)
+public sealed record HeadsetModel(string Id, string DisplayName)
 {
     public override string ToString() => DisplayName;
 }
 
 public static class HeadsetCatalog
 {
-    public static HeadsetModel Aero { get; } = new("aero", "Varjo Aero", "headset-aero.png");
-    public static HeadsetModel Vr1 { get; } = new("vr-1", "Varjo VR-1", "headset-vr-1.png");
-    public static HeadsetModel Vr2 { get; } = new("vr-2", "Varjo VR-2", "headset-vr-2.png");
-    public static HeadsetModel Vr3 { get; } = new("vr-3", "Varjo VR-3", "headset-vr-3.png");
-    public static HeadsetModel Xr1 { get; } = new("xr-1", "Varjo XR-1", "headset-xr-1.png");
-    public static HeadsetModel Xr3 { get; } = new("xr-3", "Varjo XR-3", "headset-xr-3.png");
-    public static HeadsetModel Xr4 { get; } = new("xr-4", "Varjo XR-4", "headset-xr-4.png");
-    public static HeadsetModel Unknown { get; } = new("unknown", "Unknown", "headset-unknown.png");
+    public static HeadsetModel Aero { get; } = new("aero", "Varjo Aero");
+    public static HeadsetModel Vr1 { get; } = new("vr-1", "Varjo VR-1");
+    public static HeadsetModel Vr2 { get; } = new("vr-2", "Varjo VR-2");
+    public static HeadsetModel Vr3 { get; } = new("vr-3", "Varjo VR-3");
+    public static HeadsetModel Xr1 { get; } = new("xr-1", "Varjo XR-1");
+    public static HeadsetModel Xr3 { get; } = new("xr-3", "Varjo XR-3");
+    public static HeadsetModel Xr4 { get; } = new("xr-4", "Varjo XR-4");
+    public static HeadsetModel Unknown { get; } = new("unknown", "Unknown");
 
     public static IReadOnlyList<HeadsetModel> Known { get; } =
     [

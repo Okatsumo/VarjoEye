@@ -10,14 +10,15 @@ public enum ConnectionStatus
 
 public sealed record HeadsetState(
     string Name,
-    string ImageAssetKey,
+    string ModelId,
     ConnectionStatus Connection,
     string RuntimeStatus,
     string EyeTrackingStatus,
     string OscOutputStatus,
     string TrackingFrequency,
     string VarjoRuntimeVersion,
-    string? ErrorMessage = null)
+    string? ErrorMessage = null,
+    bool IsGazeCalibrating = false)
 {
     public static HeadsetState ConnectedDemo { get; } = For(HeadsetCatalog.Aero, ConnectionStatus.Connected);
 
@@ -34,7 +35,7 @@ public sealed record HeadsetState(
     {
         ConnectionStatus.Connected => new(
             model.DisplayName,
-            model.ImageAssetKey,
+            model.Id,
             ConnectionStatus.Connected,
             "Active",
             "Ready",
@@ -43,7 +44,7 @@ public sealed record HeadsetState(
             "2.15.6"),
         ConnectionStatus.Connecting => new(
             model.DisplayName,
-            model.ImageAssetKey,
+            model.Id,
             ConnectionStatus.Connecting,
             "Starting",
             "Waiting",
@@ -52,7 +53,7 @@ public sealed record HeadsetState(
             "—"),
         ConnectionStatus.Error => new(
             model.DisplayName,
-            model.ImageAssetKey,
+            model.Id,
             ConnectionStatus.Error,
             "Error",
             "Error",
@@ -62,7 +63,7 @@ public sealed record HeadsetState(
             "Varjo Runtime is not available."),
         _ => new(
             model.DisplayName,
-            model.ImageAssetKey,
+            model.Id,
             ConnectionStatus.Disconnected,
             "Inactive",
             "Unavailable",
@@ -92,7 +93,8 @@ public sealed record HeadsetState(
             },
             OscOutputStatus = "Disconnected",
             VarjoRuntimeVersion = string.IsNullOrWhiteSpace(info.RuntimeVersion) ? "—" : info.RuntimeVersion,
-            ErrorMessage = error
+            ErrorMessage = error,
+            IsGazeCalibrating = info.IsGazeCalibrating == true
         };
 
     public string ConnectionLabel => Connection switch

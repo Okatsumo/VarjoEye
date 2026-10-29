@@ -7,5 +7,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="VarjoEye.Tests" />
   </ItemGroup>
 </Project>

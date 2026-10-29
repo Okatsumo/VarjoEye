@@ -11,6 +11,12 @@ internal sealed class FakeTrackingDataProvider : ITrackingDataProvider
 
     public event EventHandler<EyeCameraFrame>? CameraFrameReceived;
 
+    public event EventHandler<GazeSample>? GazeReceived;
+
+    public long CurrentTimeNanoseconds { get; set; } = 1_000_000_000;
+
+    public long GetCurrentTimeNanoseconds() => CurrentTimeNanoseconds;
+
     public OperationResult CalibrationResult { get; set; } = OperationResult.Success();
 
     public void Start()
@@ -32,6 +38,8 @@ internal sealed class FakeTrackingDataProvider : ITrackingDataProvider
     }
 
     public void PublishCamera(EyeCameraFrame frame) => CameraFrameReceived?.Invoke(this, frame);
+
+    public void PublishGaze(GazeSample sample) => GazeReceived?.Invoke(this, sample);
 
     public void Dispose()
     {

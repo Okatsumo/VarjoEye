@@ -2,16 +2,16 @@ namespace VarjoEye.Core.Models;
 
 public sealed record EyeTrackingState(
     HeadsetState Headset,
-    CameraState LeftCamera,
-    CameraState RightCamera,
+    CameraFrameState LeftCamera,
+    CameraFrameState RightCamera,
     EyeSourceState LeftEye,
     EyeSourceState RightEye,
     bool HasTrackingData)
 {
     public static EyeTrackingState Empty { get; } = new(
         HeadsetState.Disconnected,
-        CameraState.Waiting("Left Eye Camera"),
-        CameraState.Waiting("Right Eye Camera"),
+        CameraFrameState.Waiting(EyeSide.Left),
+        CameraFrameState.Waiting(EyeSide.Right),
         EyeSourceState.Empty,
         EyeSourceState.Empty,
         false);

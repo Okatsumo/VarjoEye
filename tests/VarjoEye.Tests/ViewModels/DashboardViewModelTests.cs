@@ -15,9 +15,10 @@ public sealed class DashboardViewModelTests
         var vm = Create();
         Assert.Equal(ConnectionStatus.Disconnected, vm.Headset.Connection);
         Assert.Equal("No headset", vm.Headset.Name);
-        Assert.Equal("headset-unknown.png", vm.Headset.ImageAssetKey);
+        Assert.Equal("unknown", vm.Headset.ModelId);
         Assert.False(vm.HasTrackingData);
         Assert.Equal("—", vm.LeftMetrics.PupilDiameter);
+        Assert.False(vm.RecalibrateCommand.CanExecute(null));
     }
 
     [Fact]
@@ -30,9 +31,10 @@ public sealed class DashboardViewModelTests
 
         Assert.Equal(ConnectionStatus.Connected, vm.Headset.Connection);
         Assert.Equal("Varjo XR-4", vm.Headset.Name);
-        Assert.Equal("headset-xr-4.png", vm.Headset.ImageAssetKey);
+        Assert.Equal("xr-4", vm.Headset.ModelId);
         Assert.True(vm.HasTrackingData);
         Assert.Equal("4.10 mm", vm.LeftMetrics.PupilDiameter);
+        Assert.True(vm.RecalibrateCommand.CanExecute(null));
     }
 
     [Fact]
@@ -89,38 +91,132 @@ public sealed class DashboardViewModelTests
     }
 
     [Fact]
-    public void RecalibrateCommand_ReportsProviderResult()
+    public async Task RecalibrateCommand_ReportsProviderResult()
     {
         var logs = new InMemoryLogService();
         var provider = new FakeTrackingDataProvider
         {
+            Current = Live(HeadsetCatalog.Aero, "Varjo Aero"),
             CalibrationResult = OperationResult.Failure("No Varjo headset is connected.")
         };
         var vm = Create(logs, provider);
-        vm.RecalibrateCommand.Execute(null);
+        Assert.True(vm.RecalibrateCommand.CanExecute(null));
+        await vm.RecalibrateCommand.ExecuteAsync(null);
         Assert.True(vm.IsStatusOpen);
         Assert.Contains("No Varjo headset", vm.StatusMessage);
         Assert.Contains(logs.Entries, e => e.Message.Contains("No Varjo headset"));
     }
 
     [Fact]
-    public void TrainModelCommand_ShowsNotConnectedMessage()
+    public async Task RecalibrateCommand_StartsBabbleCollection()
     {
-        var vm = Create();
-        vm.TrainModelCommand.Execute(null);
-        Assert.True(vm.IsStatusOpen);
-        Assert.Contains("Train Model", vm.StatusMessage);
+        var calibrator = new FakeBaballoniaCalibrator();
+        var provider = new FakeTrackingDataProvider
+        {
+            Current = Live(HeadsetCatalog.Aero, "Varjo Aero")
+        };
+        var vm = Create(provider: provider, calibrator: calibrator);
+        Assert.True(vm.RecalibrateCommand.CanExecute(null));
+        await vm.RecalibrateCommand.ExecuteAsync(null);
+        Assert.Equal(1, calibrator.BeginCount);
+        Assert.Contains("Waiting for Varjo calibration", vm.StatusMessage);
     }
 
-    private static DashboardViewModel Create(ILogService? logs = null, FakeTrackingDataProvider? provider = null)
+    [Fact]
+    public void RecalibrateCommand_DisabledWhileCalibrating()
+    {
+        var provider = new FakeTrackingDataProvider();
+        var vm = Create(provider: provider);
+        vm.OnNavigatedTo();
+        provider.Publish(Live(HeadsetCatalog.Aero, "Varjo Aero"));
+        Assert.True(vm.RecalibrateCommand.CanExecute(null));
+        Assert.Equal("Recalibrate", vm.RecalibrateButtonText);
+
+        provider.Publish(Live(HeadsetCatalog.Aero, "Varjo Aero", calibrating: true));
+        Assert.False(vm.RecalibrateCommand.CanExecute(null));
+        Assert.Equal("Recalibrating", vm.RecalibrateButtonText);
+    }
+
+    [Fact]
+    public void VisibleDashboard_OverlaysBaballoniaSample()
+    {
+        var provider = new FakeTrackingDataProvider();
+        var babble = new FakeBaballoniaTrackingService();
+        var vm = Create(provider: provider, baballonia: babble);
+        vm.OnNavigatedTo();
+        provider.Publish(Live(HeadsetCatalog.Aero, "Varjo Aero"));
+        babble.Publish(new BaballoniaTrackingSample(
+            BaballoniaRuntimeStatus.Tracking,
+            "Running on CPU",
+            true,
+            false,
+            new BaballoniaEyeResult(
+                1,
+                DateTimeOffset.UtcNow,
+                new BaballoniaEye(0.2, -0.1, 0.8),
+                new BaballoniaEye(-0.3, 0.1, 0.4)),
+            new CameraFrameState(EyeSide.Left, CameraAvailability.Streaming, 128, 128, new byte[128 * 128]),
+            new CameraFrameState(EyeSide.Right, CameraAvailability.Streaming, 128, 128, new byte[128 * 128])));
+
+        Assert.True(vm.LeftCamera.IsAvailable);
+        Assert.Equal(128, vm.LeftCamera.Width);
+        Assert.True(vm.LeftEye.Babble.HasSample);
+        Assert.Equal(0.8, vm.LeftEye.Babble.Openness);
+        Assert.Equal("0.80", vm.LeftMetrics.BabbleOpenness);
+        Assert.Equal("4.10 mm", vm.LeftMetrics.PupilDiameter);
+    }
+
+    [Fact]
+    public void TrainModelCommand_StartsTrainer()
+    {
+        var trainer = new FakeBaballoniaTrainer();
+        var vm = Create(trainer: trainer);
+        vm.TrainModelCommand.Execute(null);
+        Assert.Equal(1, trainer.BeginCount);
+        Assert.True(vm.IsTrainingBusy);
+        Assert.Contains("look at the center", vm.StatusMessage);
+    }
+
+    [Fact]
+    public void TrainModelCommand_ReportsWhenTrainerCannotStart()
+    {
+        var trainer = new FakeBaballoniaTrainer { BeginResult = false };
+        var vm = Create(trainer: trainer);
+        vm.TrainModelCommand.Execute(null);
+        Assert.Contains("Finish Varjo calibration", vm.StatusMessage);
+        Assert.False(vm.IsTrainingBusy);
+    }
+
+    [Fact]
+    public void Navigation_EnablesPreviewOnlyWhileVisible()
+    {
+        var babble = new FakeBaballoniaTrackingService();
+        using var vm = Create(baballonia: babble);
+        Assert.False(babble.PreviewEnabled);
+        vm.OnNavigatedTo();
+        Assert.True(babble.PreviewEnabled);
+        vm.OnNavigatedFrom();
+        Assert.False(babble.PreviewEnabled);
+    }
+
+    private static DashboardViewModel Create(
+        ILogService? logs = null,
+        FakeTrackingDataProvider? provider = null,
+        FakeBaballoniaTrackingService? baballonia = null,
+        FakeBaballoniaTrainer? trainer = null,
+        FakeBaballoniaCalibrator? calibrator = null)
     {
         return new DashboardViewModel(
             provider ?? new FakeTrackingDataProvider(),
+            baballonia ?? new FakeBaballoniaTrackingService(),
+            trainer ?? new FakeBaballoniaTrainer(),
+            calibrator ?? new FakeBaballoniaCalibrator(),
+            new FakeCalibrationOverlay(),
             logs ?? new InMemoryLogService(),
             new ImmediateDispatcher());
     }
 
-    private static EyeTrackingState Live(HeadsetModel model, string name)
+    private static EyeTrackingState Live(HeadsetModel model, string name, bool calibrating = false)
     {
         var visual = new EyeSourceVisual(0.9, 0.1, -0.05, 0.55);
         var varjo = new VarjoEyeMetrics(
@@ -129,9 +225,13 @@ public sealed class DashboardViewModelTests
             new Vector3Value(0.1, -0.05, 0.99));
         var eye = new EyeSourceState(visual, varjo, BabbleEyeMetrics.Empty, CombinedEyeMetrics.Empty);
         return new EyeTrackingState(
-            HeadsetState.For(model, ConnectionStatus.Connected) with { Name = name },
-            CameraState.Waiting("Left Eye Camera"),
-            CameraState.Waiting("Right Eye Camera"),
+            HeadsetState.For(model, ConnectionStatus.Connected) with
+            {
+                Name = name,
+                IsGazeCalibrating = calibrating
+            },
+            CameraFrameState.Waiting(EyeSide.Left),
+            CameraFrameState.Waiting(EyeSide.Right),
             eye,
             eye,
             true);
